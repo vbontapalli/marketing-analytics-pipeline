@@ -67,5 +67,15 @@ Auto Loader over a scheduled batch read, why partitioning by date, why
 quarantine instead of drop-on-failure. Documenting real trade-offs here, not
 just describing what the code does.)*
 
+**Silver layer validation strategy:** I used an inner join between orders and
+customers when building the Silver layer, rather than a left join, to
+guarantee referential integrity in the cleaned data — every order in Silver
+is guaranteed to have a valid, matching customer record. Orders that fail
+this check (along with duplicate `order_id`s and rows with a null
+`order_status`) are not silently dropped; they're written to separate
+`silver_quarantine` Delta tables, so any excluded record can be audited later
+without re-running the full pipeline. This mirrors a real data quality
+practice: bad data should be visible and traceable, not invisible.
+
 ---
 *Status: Week 1 — data ingestion (Bronze layer) in progress.*
